@@ -1,0 +1,27 @@
+{
+  "name": "diy-tiling-calculator",
+  "version": "1.0.0",
+  "description": "Complete DIY tiling calculator with material estimates, UK store finder, photo documentation, and installation guides",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "deploy": "vercel"
+  },
+  "keywords": [
+    "tiling",
+    "calculator",
+    "diy",
+    "home-improvement",
+    "tiles",
+    "renovation",
+    "uk"
+  ],
+  "author": "Kevin's Tiling Business",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/diy-tiling-calculator"
+  }
+}
