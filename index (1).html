@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIY Tiling Calculator - Work Out Your Materials</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function DiYTilingCalculator() {
+            // Project details
+            const [projectName, setProjectName] = useState('');
+            const [rooms, setRooms] = useState([{
+                id: 1,
+                name: 'Room 1',
+                areas: [{
+                    id: 1,
+                    width: '',
+                    height: '',
+                    subtract: false
+                }]
+            }]);
+
+            // Tile specifications
+            const [tileWidth, setTileWidth] = useState('');
+            const [tileHeight, setTileHeight] = useState('');
+            const [tileUnit, setTileUnit] = useState('mm');
+            const [groutGap, setGroutGap] = useState('2');
+            const [wastage, setWastage] = useState('10');
+
+            // Material options
+            const [substrateType, setSubstrateType] = useState('plasterboard');
+            const [isWetArea, setIsWetArea] = useState(false);
+            const [tileType, setTileType] = useState('ceramic');
+
+            // Results
+            const [results, setResults] = useState(null);
+
+            // Add new room
+            const addRoom = () => {
+                setRooms([...rooms, {
+                    id: Date.now(),
+                    name: `Room ${rooms.length + 1}`,
+                    areas: [{
+                        id: Date.now(),
+                        width: '',
+                        height: '',
+                        subtract: false
+                    }]
+                }]);
+            };
+
+            // Remove room
+            const removeRoom = (roomId) => {
+                setRooms(rooms.filter(room => room.id !== roomId));
+            };
+
+            // Add area to room
+            const addArea = (roomId) => {
+                setRooms(rooms.map(room => {
+                    if (room.id === roomId) {
+                        return {
+                            ...room,
+                            areas: [...room.areas, {
+                                id: Date.now(),
+                                width: '',
+                                height: '',
+                                subtract: false
+                            }]
+                        };
+                    }
+                    return room;
+                }));
+            };
+
+            // Remove area from room
+            const removeArea = (roomId, areaId) => {
+                setRooms(rooms.map(room => {
+                    if (room.id === roomId) {
+                        return {
+                            ...room,
+                            areas: room.areas.filter(area => area.id !== areaId)
+                        };
+                    }
+                    return room;
+                }));
+            };
+
+            // Update area
+            const updateArea = (roomId, areaId, field, value) => {
+                setRooms(rooms.map(room => {
+                    if (room.id === roomId) {
+                        return {
+                            ...room,
+                            areas: room.areas.map(area => {
+                                if (area.id === areaId) {
+                                    return { ...area, [field]: value };
+                                }
+                                return area;
+                            })
+                        };
+                    }
+                    return room;
+                }));
+            };
+
+            // Update room name
+            const updateRoomName = (roomId, name) => {
+                setRooms(rooms.map(room => {
+                    if (room.id === roomId) {
+                        return { ...room, name };
+                    }
+                    return room;
+                }));
+            };
+
+            // Calculate materials
+            const calculateMaterials = () => {
+                // Calculate total area
+                let totalArea = 0;
+                rooms.forEach(room => {
+                    room.areas.forEach(area => {
+                        const width = parseFloat(area.width) || 0;
+                        const height = parseFloat(area.height) || 0;
+                        const areaSize = width * height;
+                        if (area.subtract) {
+                            totalArea -= areaSize;
+                        } else {
+                            totalArea += areaSize;
+                        }
+                    });
+                });
+
+                if (totalArea <= 0) {
+                    alert('Please enter valid dimensions');
+                    return;
+                }
+
+                // Convert tile size to meters
+                const tileSizeMultiplier = tileUnit === 'mm' ? 0.001 : tileUnit === 'cm' ? 0.01 : 1;
+                const tileWidthM = (parseFloat(tileWidth) || 0) * tileSizeMultiplier;
+                const tileHeightM = (parseFloat(tileHeight) || 0) * tileSizeMultiplier;
+                const tileArea = tileWidthM * tileHeightM;
+
+                if (tileArea <= 0) {
+                    alert('Please enter valid tile dimensions');
+                    return;
+                }
+
+                // Calculate tiles needed
+                const wastagePercent = parseFloat(wastage) || 10;
+                const tilesNeeded = Math.ceil((totalArea / tileArea) * (1 + wastagePercent / 100));
+
+                // Calculate adhesive (coverage ~5m² per 20kg bag for wall tiles, ~3m² for floor)
+                const adhesiveCoverage = substrateType === 'concrete' ? 3 : 4;
+                const adhesiveBags = Math.ceil(totalArea / adhesiveCoverage);
+
+                // Calculate grout (approximately 1kg per m² for 2mm gaps)
+                const groutGapMm = parseFloat(groutGap) || 2;
+                const groutPerM2 = groutGapMm <= 2 ? 1 : groutGapMm <= 4 ? 1.5 : 2;
+                const groutKg = Math.ceil(totalArea * groutPerM2);
+
+                // Calculate primer (if needed)
+                const needsPrimer = substrateType === 'plasterboard' || substrateType === 'concrete';
+                const primerLitres = needsPrimer ? Math.ceil(totalArea * 0.15) : 0; // ~150ml per m²
+
+                // Calculate tanking (if wet area)
+                const tankingLitres = isWetArea ? Math.ceil(totalArea * 0.3) : 0; // ~300ml per m² (2 coats)
+
+                // Calculate backer board (if needed for wet areas on plasterboard)
+                const needsBackerBoard = isWetArea && substrateType === 'plasterboard';
+                const backerBoardSheets = needsBackerBoard ? Math.ceil(totalArea / 2.88) : 0; // 1200x2400mm sheets
+
+                // Calculate sealer (if natural stone)
+                const needsSealer = tileType === 'natural-stone' || tileType === 'porcelain';
+                const sealerLitres = needsSealer ? Math.ceil(totalArea * 0.1) : 0; // ~100ml per m²
+
+                setResults({
+                    totalArea: totalArea.toFixed(2),
+                    tilesNeeded,
+                    tileBoxes: Math.ceil(tilesNeeded / 10), // Assuming 10 tiles per box
+                    adhesiveBags,
+                    groutKg,
+                    primerLitres,
+                    tankingLitres,
+                    backerBoardSheets,
+                    sealerLitres,
+                    needsPrimer,
+                    needsBackerBoard,
+                    needsSealer
+                });
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+                    <div className="max-w-4xl mx-auto">
+                        {/* Header */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">DIY Tiling Calculator</h1>
+                            <p className="text-gray-600">Work out exactly what materials you need for your tiling project</p>
+                        </div>
+
+                        {/* Project Name */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Project Name (Optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                placeholder="e.g., Bathroom Renovation"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        {/* Tile Specifications */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Tile Specifications</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tile Width
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            value={tileWidth}
+                                            onChange={(e) => setTileWidth(e.target.value)}
+                                            placeholder="300"
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <select
+                                            value={tileUnit}
+                                            onChange={(e) => setTileUnit(e.target.value)}
+                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="mm">mm</option>
+                                            <option value="cm">cm</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tile Height
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={tileHeight}
+                                        onChange={(e) => setTileHeight(e.target.value)}
+                                        placeholder="600"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tile Type
+                                    </label>
+                                    <select
+                                        value={tileType}
+                                        onChange={(e) => setTileType(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="ceramic">Ceramic</option>
+                                        <option value="porcelain">Porcelain</option>
+                                        <option value="natural-stone">Natural Stone</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Grout Gap (mm)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={groutGap}
+                                        onChange={(e) => setGroutGap(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Wastage (%)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={wastage}
+                                        onChange={(e) => setWastage(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Surface & Preparation */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Surface & Preparation</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Substrate Type
+                                    </label>
+                                    <select
+                                        value={substrateType}
+                                        onChange={(e) => setSubstrateType(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="plasterboard">Plasterboard/Drywall</option>
+                                        <option value="concrete">Concrete/Screed</option>
+                                        <option value="existing-tiles">Existing Tiles</option>
+                                        <option value="plaster">Plaster</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-end">
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={isWetArea}
+                                            onChange={(e) => setIsWetArea(e.target.checked)}
+                                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <span className="ml-2 text-gray-700 font-medium">
+                                            This is a wet area (shower/bath)
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Room Measurements */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-800">Measurements</h2>
+                                <button
+                                    onClick={addRoom}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    + Add Room
+                                </button>
+                            </div>
+
+                            {rooms.map((room, roomIndex) => (
+                                <div key={room.id} className="mb-6 pb-6 border-b border-gray-200 last:border-b-0">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <input
+                                            type="text"
+                                            value={room.name}
+                                            onChange={(e) => updateRoomName(room.id, e.target.value)}
+                                            className="text-lg font-semibold px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        {rooms.length > 1 && (
+                                            <button
+                                                onClick={() => removeRoom(room.id)}
+                                                className="text-red-600 hover:text-red-700"
+                                            >
+                                                Remove Room
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {room.areas.map((area, areaIndex) => (
+                                        <div key={area.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                                            <div className="md:col-span-4">
+                                                <label className="block text-xs text-gray-600 mb-1">
+                                                    Width (m)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={area.width}
+                                                    onChange={(e) => updateArea(room.id, area.id, 'width', e.target.value)}
+                                                    placeholder="2.5"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-4">
+                                                <label className="block text-xs text-gray-600 mb-1">
+                                                    Height (m)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={area.height}
+                                                    onChange={(e) => updateArea(room.id, area.id, 'height', e.target.value)}
+                                                    placeholder="2.4"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-3 flex items-end">
+                                                <label className="flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={area.subtract}
+                                                        onChange={(e) => updateArea(room.id, area.id, 'subtract', e.target.checked)}
+                                                        className="w-4 h-4 text-blue-600 rounded"
+                                                    />
+                                                    <span className="ml-2 text-sm text-gray-700">
+                                                        Subtract
+                                                    </span>
+                                                </label>
+                                            </div>
+                                            <div className="md:col-span-1 flex items-end justify-end">
+                                                {room.areas.length > 1 && (
+                                                    <button
+                                                        onClick={() => removeArea(room.id, area.id)}
+                                                        className="text-red-600 hover:text-red-700 text-sm"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        onClick={() => addArea(room.id)}
+                                        className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                    >
+                                        + Add Another Area
+                                    </button>
+                                </div>
+                            ))}
+
+                            <div className="mt-6 pt-4 border-t border-gray-200">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    💡 <strong>Tip:</strong> Measure each wall separately. Use "Subtract" for windows, doors, or areas you don't want to tile.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Calculate Button */}
+                        <button
+                            onClick={calculateMaterials}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg mb-6"
+                        >
+                            Calculate Materials Needed
+                        </button>
+
+                        {/* Results */}
+                        {results && (
+                            <div className="bg-white rounded-lg shadow-lg p-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Shopping List</h2>
+                                
+                                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
+                                    <p className="text-lg font-semibold text-gray-800">
+                                        Total Area: <span className="text-blue-600">{results.totalArea} m²</span>
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {/* Tiles */}
+                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold text-gray-800">Tiles</p>
+                                            <p className="text-sm text-gray-600">Including {wastage}% wastage</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-2xl font-bold text-blue-600">{results.tilesNeeded}</p>
+                                            <p className="text-sm text-gray-600">≈ {results.tileBoxes} boxes</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Adhesive */}
+                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold text-gray-800">Tile Adhesive</p>
+                                            <p className="text-sm text-gray-600">Ready-mixed or powder</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-2xl font-bold text-blue-600">{results.adhesiveBags}</p>
+                                            <p className="text-sm text-gray-600">20kg bags</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Grout */}
+                                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold text-gray-800">Grout</p>
+                                            <p className="text-sm text-gray-600">For {groutGap}mm gaps</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-2xl font-bold text-blue-600">{results.groutKg}</p>
+                                            <p className="text-sm text-gray-600">kg needed</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Primer */}
+                                    {results.needsPrimer && (
+                                        <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">Primer/Sealer</p>
+                                                <p className="text-sm text-gray-600">For surface preparation</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-bold text-blue-600">{results.primerLitres}</p>
+                                                <p className="text-sm text-gray-600">litres</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Tanking */}
+                                    {results.tankingLitres > 0 && (
+                                        <div className="flex justify-between items-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">Waterproof Tanking</p>
+                                                <p className="text-sm text-gray-600">Essential for wet areas</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-bold text-amber-600">{results.tankingLitres}</p>
+                                                <p className="text-sm text-gray-600">litres (2 coats)</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Backer Board */}
+                                    {results.needsBackerBoard && (
+                                        <div className="flex justify-between items-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">Cement Backer Board</p>
+                                                <p className="text-sm text-gray-600">Recommended for wet areas</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-bold text-amber-600">{results.backerBoardSheets}</p>
+                                                <p className="text-sm text-gray-600">sheets (1200x2400mm)</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Sealer */}
+                                    {results.needsSealer && results.sealerLitres > 0 && (
+                                        <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p className="font-semibold text-gray-800">Stone Sealer</p>
+                                                <p className="text-sm text-gray-600">For natural stone protection</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-bold text-blue-600">{results.sealerLitres}</p>
+                                                <p className="text-sm text-gray-600">litres</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Additional Materials Note */}
+                                <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                                    <p className="font-semibold text-gray-800 mb-2">Don't Forget:</p>
+                                    <ul className="text-sm text-gray-700 space-y-1">
+                                        <li>✓ Tile spacers ({groutGap}mm)</li>
+                                        <li>✓ Notched trowel (appropriate for your tile size)</li>
+                                        <li>✓ Grout float and sponges</li>
+                                        <li>✓ Spirit level and tile cutter</li>
+                                        {isWetArea && <li>✓ Tanking tape for corners and joints</li>}
+                                        {results.needsBackerBoard && <li>✓ Backer board screws and jointing tape</li>}
+                                    </ul>
+                                </div>
+
+                                {/* Tips */}
+                                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                                    <p className="font-semibold text-gray-800 mb-2">💡 Top Tips:</p>
+                                    <ul className="text-sm text-gray-700 space-y-1">
+                                        <li>• Always buy a few extra tiles in case of breakages</li>
+                                        <li>• Check your adhesive is suitable for your tile type</li>
+                                        <li>• For large format tiles (over 600mm), use a larger notched trowel</li>
+                                        {isWetArea && <li>• Ensure tanking goes up walls by at least 150mm</li>}
+                                        <li>• Allow adhesive to dry fully before grouting (usually 24 hours)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Footer */}
+                        <div className="mt-8 text-center text-gray-600 text-sm">
+                            <p>All calculations are estimates. Always check manufacturer specifications.</p>
+                            <p className="mt-2">For professional installation, contact a qualified tiler.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<DiYTilingCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>

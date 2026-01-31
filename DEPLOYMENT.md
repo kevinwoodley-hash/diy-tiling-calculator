@@ -1,231 +1,173 @@
-# Deployment Guide - DIY Tiling Calculator
+# Quick Deployment Guide
 
-Quick guide to deploy your tiling app to the web.
+## GitHub Pages Deployment (Easiest Method)
 
-## 🚀 Fastest Options
+### Step 1: Create GitHub Repository
 
-### Option 1: Netlify (Easiest - No Code Required)
-1. Go to https://app.netlify.com/drop
-2. Drag and drop your entire folder
-3. Done! You get a live URL instantly
-4. Optional: Connect to GitHub for automatic updates
+1. Go to [GitHub](https://github.com) and sign in
+2. Click the "+" icon (top right) → "New repository"
+3. Name it: `diy-tiling-calculator`
+4. Set to **Public**
+5. Click "Create repository"
 
-**Advantages:**
-- No command line needed
-- Instant deployment
-- Free SSL certificate
-- Custom domain support (free)
-- Automatic builds from GitHub
+### Step 2: Upload Files
 
-### Option 2: Vercel (Developer Friendly)
+**Option A: Using GitHub Web Interface (Simplest)**
 
-**Via Web Interface:**
-1. Go to https://vercel.com
-2. Click "Import Project"
-3. Upload your files or connect GitHub
-4. Click "Deploy"
+1. On your new repository page, click "uploading an existing file"
+2. Drag and drop ALL these files:
+   - `index.html`
+   - `README.md`
+   - `LICENSE`
+   - `.gitignore`
+3. Add commit message: "Initial commit"
+4. Click "Commit changes"
 
-**Via Command Line:**
+**Option B: Using Git Command Line**
+
 ```bash
-# Install Vercel CLI
-npm i -g vercel
+# Navigate to your project folder
+cd path/to/your/files
 
-# Navigate to your folder
-cd diy-tiling-app
-
-# Deploy
-vercel
-
-# Follow prompts, get instant URL
-```
-
-**Advantages:**
-- Excellent performance
-- Built-in analytics
-- Automatic HTTPS
-- Custom domains (free)
-- Preview deployments
-
-### Option 3: GitHub Pages (Free Forever)
-
-1. Create a GitHub repository
-2. Push your files:
-```bash
+# Initialize git repository
 git init
+
+# Add all files
 git add .
+
+# Commit files
 git commit -m "Initial commit"
+
+# Add remote repository (replace YOUR-USERNAME)
+git remote add origin https://github.com/YOUR-USERNAME/diy-tiling-calculator.git
+
+# Push to GitHub
 git branch -M main
-git remote add origin YOUR_REPO_URL
 git push -u origin main
 ```
 
-3. Enable GitHub Pages:
-   - Go to repository Settings
-   - Click "Pages" in sidebar
-   - Select "main" branch
-   - Click "Save"
-   - Your site will be live at: `https://username.github.io/repository-name`
+### Step 3: Enable GitHub Pages
 
-**Advantages:**
-- Completely free
-- Direct GitHub integration
-- Version control built-in
-- No credit card needed
+1. In your repository, click **Settings** (top menu)
+2. Scroll down to **Pages** (left sidebar)
+3. Under "Source":
+   - Select branch: **main**
+   - Select folder: **/ (root)**
+4. Click **Save**
+5. Wait 1-2 minutes for deployment
 
-## 🌐 Testing Locally First
+### Step 4: Access Your Live Site
 
-Before deploying, test locally:
-
-```bash
-# Option 1: Simple HTTP Server (Python)
-python -m http.server 8000
-# Then open: http://localhost:8000
-
-# Option 2: Using Node.js
-npx serve .
-# Then open: http://localhost:3000
-
-# Option 3: Just double-click index.html
-# Opens in your browser directly
+Your site will be available at:
+```
+https://YOUR-USERNAME.github.io/diy-tiling-calculator/
 ```
 
-## 📝 Pre-Deployment Checklist
-
-- [ ] All files in same folder (index.html, diy-tiling-app.jsx)
-- [ ] Test in multiple browsers (Chrome, Firefox, Safari)
-- [ ] Test on mobile device
-- [ ] Camera feature works (if using HTTPS)
-- [ ] All links to tile stores work
-- [ ] Calculator produces correct results
-- [ ] Photos upload and display correctly
-
-## 🔒 HTTPS Requirement
-
-**Important:** The camera feature requires HTTPS to work. All these deployment options provide free HTTPS:
-- Netlify: ✅ Automatic HTTPS
-- Vercel: ✅ Automatic HTTPS  
-- GitHub Pages: ✅ Automatic HTTPS
-
-Local testing with `file://` won't work for camera - use a local server or deploy.
-
-## 🎯 Custom Domain Setup
-
-### Netlify:
-1. Go to Domain Settings
-2. Add custom domain
-3. Update DNS records at your registrar
-4. HTTPS automatic
-
-### Vercel:
-1. Project Settings → Domains
-2. Add your domain
-3. Update DNS records
-4. HTTPS automatic
-
-### GitHub Pages:
-1. Add CNAME file with your domain
-2. Update DNS to point to GitHub
-3. Enable HTTPS in settings
-
-## 💡 Tips for Success
-
-1. **Keep it Simple:** The app works standalone, no build process needed
-2. **Update Costs:** Edit the cost estimates to match current UK prices
-3. **Add Your Branding:** Customize colors and add your business name
-4. **Test Everything:** Click every button before sharing
-5. **Mobile First:** Most DIYers will use this on phones/tablets
-
-## 🔄 Updating Your App
-
-**Netlify:**
-- Drag & drop new files to update
-- Or connect GitHub for automatic updates
-
-**Vercel:**
-```bash
-vercel --prod
-```
-
-**GitHub Pages:**
-```bash
-git add .
-git commit -m "Update"
-git push
-# Automatically deploys
-```
-
-## 📊 Analytics (Optional)
-
-Add Google Analytics by inserting before `</head>`:
-
-```html
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');
-</script>
-```
-
-## 🆘 Troubleshooting
-
-**Camera not working:**
-- Ensure site is HTTPS (not HTTP)
-- Check browser permissions
-- Test on different browser
-
-**Photos not saving:**
-- Check localStorage isn't disabled
-- Test in incognito mode
-- Clear browser cache
-
-**Tiles not calculating:**
-- Check all inputs are numbers
-- Ensure no fields are empty
-- Check browser console for errors
-
-**Store links not working:**
-- Verify internet connection
-- Check links haven't changed
-- Test in different browser
-
-## 📱 Progressive Web App (Advanced)
-
-To make it installable as an app, add these files:
-
-**manifest.json:**
-```json
-{
-  "name": "DIY Tiling Calculator",
-  "short_name": "Tiling Calc",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#1e3c72",
-  "theme_color": "#fca311",
-  "description": "Complete tiling calculator and guide",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
-}
-```
-
-Link in index.html:
-```html
-<link rel="manifest" href="manifest.json">
-```
-
-## 🎓 Learning Resources
-
-- [Netlify Docs](https://docs.netlify.com)
-- [Vercel Docs](https://vercel.com/docs)
-- [GitHub Pages Guide](https://pages.github.com)
+🎉 **That's it! Your calculator is now live!**
 
 ---
 
-**Need help?** Most platforms have excellent documentation and community support!
+## Alternative Hosting Options
+
+### Vercel (Fast & Free)
+
+1. Go to [vercel.com](https://vercel.com)
+2. Sign up with GitHub
+3. Click "New Project"
+4. Import your repository
+5. Click "Deploy"
+6. Done! You'll get a URL like: `diy-tiling-calculator.vercel.app`
+
+### Netlify (Also Free)
+
+1. Go to [netlify.com](https://netlify.com)
+2. Drag the entire project folder onto the Netlify Drop zone
+3. Done! You'll get a random URL (you can customize it)
+
+### Cloudflare Pages
+
+1. Go to [pages.cloudflare.com](https://pages.cloudflare.com)
+2. Connect your GitHub repository
+3. Deploy!
+
+---
+
+## Testing Locally First
+
+Before deploying, test it on your computer:
+
+1. Double-click `index.html` to open in browser
+2. Test all features
+3. Make sure calculations work
+4. Check it looks good on mobile (resize browser)
+
+---
+
+## Troubleshooting
+
+### "404 Not Found" on GitHub Pages
+- Make sure the file is named `index.html` (not `diy-tiling-calculator.html`)
+- Wait a few minutes for GitHub to build the site
+- Check Settings → Pages shows a green checkmark
+
+### CSS/Styles Not Loading
+- This shouldn't happen as everything is in one HTML file
+- If it does, clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+
+### Calculator Not Working
+- Open browser console (F12) to check for errors
+- Make sure you uploaded the complete `index.html` file
+- Try a different browser
+
+---
+
+## Updating Your Live Site
+
+After deployment, to make changes:
+
+1. Edit your files locally
+2. Test changes by opening `index.html`
+3. Upload changes to GitHub:
+
+**Via Web Interface:**
+- Click the file on GitHub
+- Click the pencil icon (Edit)
+- Make changes
+- Commit changes
+
+**Via Git:**
+```bash
+git add .
+git commit -m "Updated feature X"
+git push
+```
+
+GitHub Pages will automatically rebuild (takes 1-2 minutes)
+
+---
+
+## Custom Domain (Optional)
+
+Want `mycalculator.com` instead of `username.github.io`?
+
+### With GitHub Pages:
+1. Buy a domain (Namecheap, Google Domains, etc.)
+2. In repository Settings → Pages
+3. Enter your custom domain
+4. Follow DNS setup instructions
+
+### With Vercel/Netlify:
+- They make this super easy through their dashboards
+- Usually just one click + DNS setup
+
+---
+
+## Need Help?
+
+- 📧 Open an issue on GitHub
+- 💬 Ask in the repository discussions
+- 📖 Check GitHub Pages documentation
+
+---
+
+**Pro Tip:** Bookmark your live site URL and share it with friends who are doing DIY tiling projects!
